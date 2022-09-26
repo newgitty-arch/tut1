@@ -1,0 +1,36 @@
+Jay Reid
+101146559
+
+Lab 1
+
+I would like to be evaluated via video.
+
+To use this lab, run ```node server.js``` in the root diretory. From the homepage you can search for a product and create a product.
+To retrieve a specific product, you can either enter the url into the browser localhost:3000/products/productID or click a link within the search.
+
+To add a review, you can add one on a product's specific page. You can also view reviews there as well.
+
+What resources do you have and what is their structure?
+    The resources I have are products and have the structure 
+    {
+        name: string
+        price: number
+        dimensions: Obj
+        stock: number
+        reviews: Array
+        id: number
+    }
+    The fields of these products ensure I can represent all the data to the client once requested.
+
+
+b. Which HTTP methods are you using for various operations and why?
+For retrieveing a list of products, individual products as well as product reviews, I used the GET method to retrieve data from the server.
+For adding products and product reviews, I used the POST method to send data to the server.
+c. What is your URI naming scheme?
+My uri naming scheme is 
+products/
+products/:productID
+products/:productID/reviews
+
+d. What response codes are you sending and why?
+I am sending status code 200 for a succesful request, status code 404 when the user requests something the server doesn't have, and 201 when a new resource is created.

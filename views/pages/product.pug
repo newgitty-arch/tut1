@@ -1,0 +1,16 @@
+html
+    head
+        title Jay's Store
+body
+
+    div#main
+        h1 #{product.name}
+        p Price: #{product.price}
+        p Stock: #{product.stock}
+        p Dimensions #{product.dimensions.x} x #{product.dimensions.y} x #{product.dimensions.z} 
+        a(href=`/products/${product.id}/reviews`) Reviews
+        p Add a review 
+            input(type="textbox" id="review")
+            button(type="button" id="add") Add 
+
+        script(src="/product.js")

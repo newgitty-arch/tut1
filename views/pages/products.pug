@@ -1,0 +1,10 @@
+html
+	head
+		title Store Manager Home Page
+body
+
+	div#main
+		h1 List of products:
+		each product in products
+			a(href="/products/" + product.id) #{product.name}
+			br
