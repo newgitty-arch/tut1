@@ -14,6 +14,9 @@ products = [{"name":"Tasty Cotton Chair","price":444,"dimensions":{"x":2,"y":4,"
 {"name":"Rustic Fresh Tuna","price":159,"dimensions":{"x":8,"y":6,"z":8},"stock":30, "reviews": [], "id":13},
 {"name":"Small Metal Tuna","price":225,"dimensions":{"x":8,"y":10,"z":8},"stock":49, "reviews": [], "id":14}];
 
+const mc = require("mongodb").MongoClient;
+
+
 let nextId = products[products.length-1].id + 1
 
 const express = require('express');
@@ -71,34 +74,60 @@ app.get("/product.js", function(req, res, next){
 //Search product
 app.get("/products", function(req, res, next){
     val = [];
-    if (req.query.inStock === 'true'){
-      if(req.query.name === undefined){
-        val = products.filter(product => product.stock > 0)
-      }
-      else{
-      val = products.filter(product => product.stock > 0 && product.name.toLowerCase().includes(req.query.name.toLowerCase()))
-      }
-    }
-    else{
-      if(req.query.name === undefined){
-        val = products
-      }
-      else{
-      val = products.filter(product => product.name.toLowerCase().includes(req.query.name.toLowerCase()))
-      }
-    }
-    res.status(200)
-    res.render('pages/products', {products: val})
-})
+    let products_query = []
+    mc.connect("mongodb://localhost:27017/", function(err, client) {
+	    if(err) throw err;
+
+	    let db = client.db('store');
+      db.collection("products").find().toArray(function(err,result){
+        if(err) throw err;
+    
+        if (req.query.inStock === 'true'){
+          if(req.query.name === undefined){
+            val = result.filter(product => product.stock > 0)
+          }
+          else{
+          val = result.filter(product => product.stock > 0 && product.name.toLowerCase().includes(req.query.name.toLowerCase()))
+          }
+        }
+        else{
+          if(req.query.name === undefined){
+            val = result
+          }
+          else{
+          val = result.filter(product => product.name.toLowerCase().includes(req.query.name.toLowerCase()))
+          }
+        }
+        res.status(200)
+        res.render('pages/products', {products: val})
+        client.close();
+      });
+	  });
+});
 
 //For any request string containing :productID, find the matching product
 app.param("productID", function(req, res, next){
-  if(products.hasOwnProperty(req.params.productID)){
-    req.product = products[req.params.productID];
-    next();
-  }else{
-    res.status(404).send("Unknown product ID");
-  }
+
+  productID = req.params.productID
+    let product = {};
+    mc.connect("mongodb://localhost:27017/", function(err, client) {
+	    if(err) throw err;
+
+      let db = client.db('store');
+	    db.collection("products").findOne({id : {"$eq" : parseInt(productID)}}, function(err,result){
+      console.log(result)
+      if (result === null){
+        res.status(404).send("Unknown product ID");
+        next()
+      }
+      else{
+		  req.product = result;
+      console.log(result)
+		  client.close();
+      next();
+      }
+	  });
+  });
 })
 
 //Retrieve a particular product by specify ID
@@ -135,8 +164,6 @@ app.get("/products/:productID/:review", function(req, res, next){
   }
 })
 
-//Create a product
-//Two step process: verify the data, then add the product
 app.post("/products", addProduct);
 
 function addProduct(req, res, next){
@@ -149,20 +176,38 @@ function addProduct(req, res, next){
     reviews: []
   };
   nextId++;
-  products.push(product)
+  mc.connect("mongodb://localhost:27017/", function(err, client) {
+    if(err) throw err;
+    let db = client.db('store');
+    db.collection("products").insertOne(product, function(err,result){
+      if(err) throw err;
+        client.close();
+    });
+  
+  
+  });
+  
   res.status(201).json(product);
 }
 
-//Add a Review to the product with ID=:productID
 app.post("/products/:productID/reviews", addReview);
 
 
 function addReview(req, res, next){
   review = req.body.review
-  products[req.product.id].reviews.push(review)
+  mc.connect("mongodb://localhost:27017/", function(err, client) {
+	if(err) throw err;
 
+	let db = client.db('store');
+	db.collection("products").updateOne({id:req.product.id}, {$push: {reviews: review}}, function(err,result){
+		if(err) throw err;
+		client.close();
+	});
+
+
+});
   res.status(200).json(req.body.review);
 }
 
 app.listen(3000);
-console.log("Server listening at http://localhost:3000");
+console.log("Server running at http://localhost:3000")
